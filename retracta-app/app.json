@@ -4,10 +4,10 @@
     "slug": "retracta-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/RETRACTA splash screen.png",
+    "icon": "./assets/images/Background.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/images/RETRACTA splash screen.png",
+      "image": "./assets/images/Background.png",
       "resizeMode": "contain",
       "backgroundColor": "#EAF0FE"
     },
@@ -19,13 +19,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/RETRACTA splash screen.png",
+        "foregroundImage": "./assets/images/Background.png",
         "backgroundColor": "#EAF0FE"
       },
       "package": "com.retractacompany.retractaapp"
     },
     "web": {
-      "favicon": "./assets/images/RETRACTA splash screen.png"
+      "favicon": "./assets/images/Background.png"
     }
   }
 }

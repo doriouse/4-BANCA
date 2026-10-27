@@ -5,7 +5,7 @@ import { auth } from '../config/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function SettingsScreen({ navigation }) {
-  const [cityInput, setCityInput] = useState('São Paulo');
+  const [cityInput, setCityInput] = useState('Taboão da Serra');
 
   useEffect(() => {
     loadCity();
@@ -30,7 +30,6 @@ export default function SettingsScreen({ navigation }) {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Configurações</Text>
 
-      {/* Configuração de Localidade */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Localização do Varal</Text>
         <Text style={styles.label}>Cidade do Dispositivo (para API de clima):</Text>
@@ -38,14 +37,13 @@ export default function SettingsScreen({ navigation }) {
           style={styles.input}
           value={cityInput}
           onChangeText={setCityInput}
-          placeholder="Ex: São Paulo"
+          placeholder="Ex: Taboão da Serra"
         />
         <TouchableOpacity style={styles.saveButton} onPress={saveCity}>
           <Text style={styles.saveButtonText}>Salvar Localidade</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Suporte */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Suporte e Contato</Text>
         <TouchableOpacity onPress={() => Linking.openURL('mailto:retractacompany@gmail.com')}>
@@ -65,6 +63,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#EAF0FE',
     padding: 16,
+    paddingBottom: 40,
   },
   title: {
     fontFamily: 'LexendGiga_700Bold',

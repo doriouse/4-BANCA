@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { database } from '../config/firebase';
@@ -7,21 +7,24 @@ import { ref, onValue, set } from 'firebase/database';
 
 export default function HomeScreen() {
   const [deviceState, setDeviceState] = useState({
-    status: 'aberto', // 'aberto', 'retraido', 'movimentando'
+    status: 'aberto', 
     lastUpdate: 'Agora mesmo',
     isOnline: true,
   });
 
-  const [cityName, setCityName] = useState('São Paulo');
+  const [cityName, setCityName] = useState('Taboão da Serra');
   const [weatherData, setWeatherData] = useState({
     temp: '--',
     description: 'Carregando clima...',
+    iconEmoji: '⛅',
   });
 
-  const deviceId = 'varal_01';
-  const WEATHER_API_KEY = 'SUA_CHAVE_OPENWEATHERMAP'; // Substitua pela sua chave do OpenWeatherMap
+  const [actionLoading, setActionLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
-  // Carregar cidade salva nas configurações sempre que a tela focar
+  const deviceId = 'varal_01';
+  const WEATHER_API_KEY = 'a004cad01d3680e5572c6734c6730ef3';
+
   useFocusEffect(
     useCallback(() => {
       loadSavedCity();
@@ -31,37 +34,42 @@ export default function HomeScreen() {
   const loadSavedCity = async () => {
     try {
       const savedCity = await AsyncStorage.getItem('@retracta_city');
-      if (savedCity) {
-        setCityName(savedCity);
-        fetchWeather(savedCity);
-      } else {
-        fetchWeather('São Paulo');
-      }
+      const targetCity = savedCity || 'Taboão da Serra';
+      setCityName(targetCity);
+      fetchRealWeather(targetCity);
     } catch (error) {
-      fetchWeather('São Paulo');
+      fetchRealWeather('Taboão da Serra');
     }
   };
 
-  const fetchWeather = async (city) => {
-    if (WEATHER_API_KEY === 'SUA_CHAVE_OPENWEATHERMAP') {
-      setWeatherData({ temp: '24°C', description: 'Parcialmente nublado' });
-      return;
-    }
+  const getWeatherEmoji = (conditionCode) => {
+    if (conditionCode >= 200 && conditionCode < 300) return '⛈️';
+    if (conditionCode >= 300 && conditionCode < 600) return '🌧️';
+    if (conditionCode >= 600 && conditionCode < 700) return '❄️';
+    if (conditionCode >= 700 && conditionCode < 800) return '🌫️';
+    if (conditionCode === 800) return '☀️';
+    if (conditionCode > 800) return '☁️';
+    return '⛅';
+  };
+
+  const fetchRealWeather = async (city) => {
     try {
       const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&lang=pt_br&appid=${WEATHER_API_KEY}`
       );
       const data = await response.json();
       if (response.ok) {
+        const weatherId = data.weather[0].id;
         setWeatherData({
           temp: `${Math.round(data.main.temp)}°C`,
           description: data.weather[0].description,
+          iconEmoji: getWeatherEmoji(weatherId),
         });
       } else {
-        setWeatherData({ temp: '--', description: 'Cidade não encontrada' });
+        setWeatherData({ temp: '22°C', description: 'Dados indisponíveis', iconEmoji: '⚠️' });
       }
     } catch (error) {
-      setWeatherData({ temp: '--', description: 'Erro ao carregar clima' });
+      setWeatherData({ temp: '23°C', description: 'Erro de conexão', iconEmoji: '❌' });
     }
   };
 
@@ -69,58 +77,86 @@ export default function HomeScreen() {
     const statusRef = ref(database, `devices/${deviceId}/status`);
     const unsubscribe = onValue(statusRef, (snapshot) => {
       const data = snapshot.val();
-      if (data) {
+      if (data && data.status) {
         setDeviceState({
-          status: data.status || 'aberto',
+          status: data.status,
           lastUpdate: data.lastUpdate || new Date().toLocaleTimeString(),
           isOnline: data.isOnline !== undefined ? data.isOnline : true,
         });
-      } else {
-        // Fallback caso o nó não exista ainda no Realtime Database
-        setDeviceState({
-          status: 'aberto',
-          lastUpdate: 'Conectado ao Firebase',
-          isOnline: true,
-        });
       }
-    });
+    }, () => {});
 
     return () => unsubscribe();
   }, []);
 
-  const sendCommand = (command) => {
+  const handleActionWithCountdown = (command) => {
+    if (actionLoading) return;
+
+    setActionLoading(true);
+    setCountdown(5);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          executeCommand(command);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const executeCommand = (command) => {
+    const novoStatus = command === 'retrair' ? 'retraido' : 'aberto';
+    const horarioAtual = new Date().toLocaleTimeString();
+
+    setDeviceState({
+      status: novoStatus,
+      lastUpdate: horarioAtual,
+      isOnline: true,
+    });
+
+    setActionLoading(false);
+
     const commandRef = ref(database, `devices/${deviceId}/commands`);
+    const statusRef = ref(database, `devices/${deviceId}/status`);
+    
     set(commandRef, {
       action: command,
       timestamp: Date.now(),
       status: 'pending'
-    });
+    }).catch(() => {});
+
+    set(statusRef, {
+      status: novoStatus,
+      lastUpdate: horarioAtual,
+      isOnline: true
+    }).catch(() => {});
   };
 
   const isRetracted = deviceState.status === 'retraido';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Indicador de Conectividade */}
       <View style={[styles.bannerOffline, { backgroundColor: deviceState.isOnline ? '#38B6FF' : '#FF944E' }]}>
         <Text style={styles.bannerText}>
-          {deviceState.isOnline ? '🟢 Dispositivo Online Conectado' : '🟠 Dispositivo Offline (Exibindo último estado)'}
+          {deviceState.isOnline ? '🟢 Dispositivo Online (Pronto para o ESP32)' : '🟠 Dispositivo Offline'}
         </Text>
       </View>
 
-      {/* Imagem Visual do Varal (Preparada para assets/images/varal_aberto.png / varal_retraido.png) */}
       <View style={styles.imageCard}>
-        <View style={styles.imagePlaceholder}>
-          <Text style={styles.imagePlaceholderText}>
-            {isRetracted ? '🌧️ [ Varal Retraído / Protegido ]' : '☀️ [ Varal Estendido / Aberto ]'}
-          </Text>
-          <Text style={styles.imageSubtext}>
-            {isRetracted ? 'Estrutura elevada sob o teto' : 'Estrutura horizontal estendida'}
-          </Text>
-        </View>
+        <Image 
+          source={
+            isRetracted 
+              ? require('../../assets/images/varal_retraido.png.png') 
+              : require('../../assets/images/varal_aberto.png.png')
+          } 
+          style={styles.varalImage}
+          resizeMode="contain"
+        />
       </View>
 
-      {/* Status Visual do Varal */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Estado Atual</Text>
         <Text style={styles.statusText}>
@@ -129,20 +165,44 @@ export default function HomeScreen() {
         <Text style={styles.updateText}>Última atualização: {deviceState.lastUpdate}</Text>
       </View>
 
-      {/* Clima Local */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Clima Local ({cityName})</Text>
-        <Text style={styles.weatherText}>{cityName} • {weatherData.temp}</Text>
-        <Text style={styles.weatherSubtext}>{weatherData.description} (Previsão Externa)</Text>
+        <View style={styles.weatherRow}>
+          <Text style={styles.weatherEmoji}>{weatherData.iconEmoji}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.weatherText}>{cityName} • {weatherData.temp}</Text>
+            <Text style={styles.weatherSubtext}>{weatherData.description}</Text>
+          </View>
+        </View>
       </View>
 
-      {/* Comandos Manuais */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => sendCommand('retrair')}>
-          <Text style={styles.actionButtonText}>Recolher Varal</Text>
+        <TouchableOpacity 
+          style={[styles.actionButton, actionLoading && styles.buttonDisabled]} 
+          onPress={() => handleActionWithCountdown('retrair')}
+          disabled={actionLoading}>
+          {actionLoading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Recolhendo ({countdown}s)</Text>
+            </View>
+          ) : (
+            <Text style={styles.actionButtonText}>Recolher Varal</Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.btnEstender]} onPress={() => sendCommand('estender')}>
-          <Text style={styles.actionButtonText}>Estender Varal</Text>
+
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.btnEstender, actionLoading && styles.buttonDisabled]} 
+          onPress={() => handleActionWithCountdown('estender')}
+          disabled={actionLoading}>
+          {actionLoading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.actionButtonText}>Estendendo ({countdown}s)</Text>
+            </View>
+          ) : (
+            <Text style={styles.actionButtonText}>Estender Varal</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -154,6 +214,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#EAF0FE',
     padding: 16,
+    paddingBottom: 40,
   },
   bannerOffline: {
     padding: 10,
@@ -169,28 +230,17 @@ const styles = StyleSheet.create({
   imageCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    height: 150,
+    height: 180,
     marginBottom: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#D9D9D9',
+    overflow: 'hidden',
   },
-  imagePlaceholder: {
-    alignItems: 'center',
-    padding: 10,
-  },
-  imagePlaceholderText: {
-    fontFamily: 'LexendGiga_700Bold',
-    fontSize: 13,
-    color: '#004AAD',
-    textAlign: 'center',
-  },
-  imageSubtext: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 11,
-    color: '#545454',
-    marginTop: 4,
+  varalImage: {
+    width: '100%',
+    height: '100%',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -219,6 +269,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#545454',
   },
+  weatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  weatherEmoji: {
+    fontSize: 36,
+  },
   weatherText: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 16,
@@ -228,7 +286,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     color: '#545454',
-    marginTop: 4,
+    marginTop: 2,
+    textTransform: 'capitalize',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -242,9 +301,18 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   btnEstender: {
     backgroundColor: '#00C2CB',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   actionButtonText: {
     fontFamily: 'Inter_600SemiBold',

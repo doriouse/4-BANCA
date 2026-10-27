@@ -16,7 +16,14 @@ function MainTabNavigator() {
         headerStyle: { backgroundColor: '#004AAD' },
         headerTintColor: '#FFFFFF',
         headerTitleStyle: { fontFamily: 'LexendGiga_700Bold', fontSize: 16 },
-        tabBarStyle: { backgroundColor: '#FFFFFF', height: 60, paddingBottom: 8 },
+        tabBarStyle: { 
+          backgroundColor: '#FFFFFF', 
+          height: 65, 
+          paddingBottom: 10, 
+          paddingTop: 8,
+          borderTopWidth: 1,
+          borderTopColor: '#D9D9D9'
+        },
         tabBarActiveTintColor: '#004AAD',
         tabBarInactiveTintColor: '#545454',
         tabBarLabelStyle: { fontFamily: 'Inter_600SemiBold', fontSize: 11 }

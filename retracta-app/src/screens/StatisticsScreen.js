@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 
 export default function StatisticsScreen() {
-  const [filter, setFilter] = useState('7d'); // '7d', '1m', '12m'
+  const [filter, setFilter] = useState('7d');
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -27,23 +27,37 @@ export default function StatisticsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Card de Indicadores */}
+      {/* Card de Indicadores Gerais */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>
           {filter === '7d' ? 'Resumo dos Últimos 7 Dias' : filter === '1m' ? 'Resumo do Último Mês' : 'Resumo Anual (12 Meses)'}
         </Text>
         
         <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Retrações por chuva:</Text>
-          <Text style={styles.statValue}>{filter === '7d' ? '4' : filter === '1m' ? '18' : '142'}</Text>
+          <Text style={styles.statLabel}>Total de retrações:</Text>
+          <Text style={styles.statValue}>{filter === '7d' ? '6' : filter === '1m' ? '24' : '180'}</Text>
         </View>
         <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Dias com chuva:</Text>
+          <Text style={styles.statLabel}>Dias com chuva registrada:</Text>
           <Text style={styles.statValue}>{filter === '7d' ? '2' : filter === '1m' ? '8' : '65'}</Text>
         </View>
         <View style={styles.statRow}>
           <Text style={styles.statLabel}>Horas ao ar livre (média):</Text>
           <Text style={styles.statValue}>12h / dia</Text>
+        </View>
+      </View>
+
+      {/* Novo Card: Histórico de Retrações (Automáticas vs Manuais) */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Origem das Retrações</Text>
+        
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>🌧️ Retrações Automáticas (Chuva):</Text>
+          <Text style={styles.statValue}>{filter === '7d' ? '4' : filter === '1m' ? '18' : '142'}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <Text style={styles.statLabel}>📱 Retrações Manuais (App):</Text>
+          <Text style={styles.statValue}>{filter === '7d' ? '2' : filter === '1m' ? '6' : '38'}</Text>
         </View>
       </View>
 
@@ -90,6 +104,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: '#EAF0FE',
     padding: 16,
+    paddingBottom: 40,
   },
   title: {
     fontFamily: 'LexendGiga_700Bold',
@@ -128,6 +143,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardTitle: {
     fontFamily: 'LexendGiga_700Bold',

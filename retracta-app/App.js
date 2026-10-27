@@ -1,45 +1,69 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { useFonts, LexendGiga_700Bold } from '@expo-google-fonts/lexend-giga';
-import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import * as SplashScreen from 'expo-splash-screen';
-import AppNavigator from './src/navigation/AppNavigator';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './src/config/firebase';
 
-SplashScreen.preventAutoHideAsync();
+import HomeScreen from './src/screens/HomeScreen';
+import StatisticsScreen from './src/screens/StatisticsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import SplashScreenCustom from './src/screens/SplashScreenCustom';
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
-  let [fontsLoaded] = useFonts({
-    LexendGiga_700Bold,
-    Inter_400Regular,
-    Inter_600SemiBold,
-  });
+  const [user, setUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    async function prepare() {
-      if (fontsLoaded) {
-        await SplashScreen.hideAsync();
-      }
-    }
-    prepare();
-  }, [fontsLoaded]);
+    const subscriber = onAuthStateChanged(auth, (usr) => {
+      setUser(usr);
+      if (initializing) setInitializing(false);
+    });
+    return subscriber;
+  }, []);
 
-  if (!fontsLoaded) {
-    return null;
+  // Exibe a SplashScreen customizada enquanto verifica o estado de login
+  if (initializing) {
+    return <SplashScreenCustom />;
   }
 
+  // Se não estiver logado, exibe a tela de login/cadastro
+  if (!user) {
+    return <LoginScreen />;
+  }
+
+  // Se estiver logado, exibe o app principal com as abas
   return (
-    <View style={styles.container}>
-      <NavigationContainer>
-        <AppNavigator />
-      </NavigationContainer>
-    </View>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: '#2563EB',
+          tabBarInactiveTintColor: '#94A3B8',
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopWidth: 1,
+            borderTopColor: '#E2E8F0',
+            height: 60,
+            paddingBottom: 8,
+            paddingTop: 8,
+          },
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Painel') iconName = focused ? 'home' : 'home-outline';
+            else if (route.name === 'Estatísticas') iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+            else if (route.name === 'Configurações') iconName = focused ? 'settings' : 'settings-outline';
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+        })}
+      >
+        <Tab.Screen name="Painel" component={HomeScreen} />
+        <Tab.Screen name="Estatísticas" component={StatisticsScreen} />
+        <Tab.Screen name="Configurações" component={SettingsScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EAF0FE',
-  },
-});

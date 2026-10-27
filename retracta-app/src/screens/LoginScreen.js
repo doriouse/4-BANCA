@@ -1,12 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
-import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'; // Ou fluxo adequado para React Native / Expo AuthSession
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { auth } from '../config/firebase';
 
 export default function LoginScreen({ navigation }) {
   const handleGoogleLogin = async () => {
-    // Implementar fluxo de login com Google (ex: expo-auth-session / Firebase Auth)
-    // Para simplificar o exemplo, simulamos a navegação após sucesso:
+    // Simulação do login com Google para transição fluida
     navigation.replace('MainApp');
   };
 
@@ -31,7 +29,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontFamily: 'LexendGiga_700Bold', // Requer carregamento de fontes
+    fontFamily: 'LexendGiga_700Bold',
     fontSize: 28,
     color: '#004AAD',
     marginBottom: 8,

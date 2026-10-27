@@ -16,9 +16,10 @@ function MainTabNavigator() {
         headerStyle: { backgroundColor: '#004AAD' },
         headerTintColor: '#FFFFFF',
         headerTitleStyle: { fontFamily: 'LexendGiga_700Bold', fontSize: 16 },
-        tabBarStyle: { backgroundColor: '#FFFFFF' },
+        tabBarStyle: { backgroundColor: '#FFFFFF', height: 60, paddingBottom: 8 },
         tabBarActiveTintColor: '#004AAD',
         tabBarInactiveTintColor: '#545454',
+        tabBarLabelStyle: { fontFamily: 'Inter_600SemiBold', fontSize: 11 }
       }}>
       <Tab.Screen name="Painel" component={HomeScreen} />
       <Tab.Screen name="Estatísticas" component={StatisticsScreen} />

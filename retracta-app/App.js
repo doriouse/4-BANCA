@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts, LexendGiga_700Bold } from '@expo-google-fonts/lexend-giga';
@@ -15,10 +15,13 @@ export default function App() {
     Inter_600SemiBold,
   });
 
-  const onLayoutRootView = React.useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
+  useEffect(() => {
+    async function prepare() {
+      if (fontsLoaded) {
+        await SplashScreen.hideAsync();
+      }
     }
+    prepare();
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
@@ -26,7 +29,7 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
+    <View style={styles.container}>
       <NavigationContainer>
         <AppNavigator />
       </NavigationContainer>
@@ -38,4 +41,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EAF0FE',
-  },});
+  },
+});

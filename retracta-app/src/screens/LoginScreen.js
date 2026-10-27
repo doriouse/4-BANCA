@@ -1,0 +1,58 @@
+import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth'; // Ou fluxo adequado para React Native / Expo AuthSession
+import { auth } from '../config/firebase';
+
+export default function LoginScreen({ navigation }) {
+  const handleGoogleLogin = async () => {
+    // Implementar fluxo de login com Google (ex: expo-auth-session / Firebase Auth)
+    // Para simplificar o exemplo, simulamos a navegação após sucesso:
+    navigation.replace('MainApp');
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>RETRACTA</Text>
+      <Text style={styles.subtitle}>Varal Automático Inteligente</Text>
+
+      <TouchableOpacity style={styles.button} onPress={handleGoogleLogin}>
+        <Text style={styles.buttonText}>Entrar com Google</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#EAF0FE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontFamily: 'LexendGiga_700Bold', // Requer carregamento de fontes
+    fontSize: 28,
+    color: '#004AAD',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#545454',
+    marginBottom: 40,
+  },
+  button: {
+    backgroundColor: '#004AAD',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+});

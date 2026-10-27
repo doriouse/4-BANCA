@@ -12,7 +12,7 @@ export default function HomeScreen() {
     isOnline: true,
   });
 
-  const [cityName, setCityName] = useState('Taboão da Serra');
+  const [cityName, setCityName] = useState('Localização no Mapa');
   const [weatherData, setWeatherData] = useState({
     temp: '--',
     description: 'Carregando clima...',
@@ -23,22 +23,32 @@ export default function HomeScreen() {
   const [countdown, setCountdown] = useState(0);
 
   const deviceId = 'varal_01';
-  const WEATHER_API_KEY = 'a004cad01d3680e5572c6734c6730ef3';
+  // Chave de API atualizada fornecida
+  const WEATHER_API_KEY = '4bec2bc8c3690bd1fa72a91970009cc3';
 
   useFocusEffect(
     useCallback(() => {
-      loadSavedCity();
+      loadSavedLocation();
     }, [])
   );
 
-  const loadSavedCity = async () => {
+  const loadSavedLocation = async () => {
     try {
-      const savedCity = await AsyncStorage.getItem('@retracta_city');
-      const targetCity = savedCity || 'Taboão da Serra';
-      setCityName(targetCity);
-      fetchRealWeather(targetCity);
+      const savedLat = await AsyncStorage.getItem('@retracta_lat');
+      const savedLon = await AsyncStorage.getItem('@retracta_lon');
+
+      if (savedLat && savedLon) {
+        const lat = parseFloat(savedLat);
+        const lon = parseFloat(savedLon);
+        setCityName(`Lat: ${lat.toFixed(2)}, Lon: ${lon.toFixed(2)}`);
+        fetchWeatherByCoords(lat, lon);
+      } else {
+        // Padrão Taboão da Serra (-23.62, -46.75)
+        setCityName('Taboão da Serra');
+        fetchWeatherByCoords(-23.6261, -46.7544);
+      }
     } catch (error) {
-      fetchRealWeather('Taboão da Serra');
+      fetchWeatherByCoords(-23.6261, -46.7544);
     }
   };
 
@@ -52,24 +62,35 @@ export default function HomeScreen() {
     return '⛅';
   };
 
-  const fetchRealWeather = async (city) => {
+  const fetchWeatherByCoords = async (lat, lon) => {
     try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&lang=pt_br&appid=${WEATHER_API_KEY}`
-      );
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=pt_br&appid=${WEATHER_API_KEY}`;
+      const response = await fetch(url);
       const data = await response.json();
-      if (response.ok) {
+
+      if (response.ok && data.main) {
         const weatherId = data.weather[0].id;
+        if (data.name) {
+          setCityName(data.name);
+        }
         setWeatherData({
           temp: `${Math.round(data.main.temp)}°C`,
           description: data.weather[0].description,
           iconEmoji: getWeatherEmoji(weatherId),
         });
       } else {
-        setWeatherData({ temp: '22°C', description: 'Dados indisponíveis', iconEmoji: '⚠️' });
+        setWeatherData({ 
+          temp: 'N/D', 
+          description: data.message ? `Erro: ${data.message}` : 'Erro na chave ou limite', 
+          iconEmoji: '⚠️' 
+        });
       }
     } catch (error) {
-      setWeatherData({ temp: '23°C', description: 'Erro de conexão', iconEmoji: '❌' });
+      setWeatherData({ 
+        temp: 'N/D', 
+        description: 'Falha de conexão com a API', 
+        iconEmoji: '❌' 
+      });
     }
   };
 
@@ -166,7 +187,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Clima Local ({cityName})</Text>
+        <Text style={styles.cardTitle}>Clima Local</Text>
         <View style={styles.weatherRow}>
           <Text style={styles.weatherEmoji}>{weatherData.iconEmoji}</Text>
           <View style={{ flex: 1 }}>

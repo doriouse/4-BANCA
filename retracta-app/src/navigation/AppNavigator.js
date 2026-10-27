@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+import SplashScreenCustom from '../screens/SplashScreenCustom';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import StatisticsScreen from '../screens/StatisticsScreen';
@@ -18,8 +20,8 @@ function MainTabNavigator() {
         headerTitleStyle: { fontFamily: 'LexendGiga_700Bold', fontSize: 16 },
         tabBarStyle: { 
           backgroundColor: '#FFFFFF', 
-          height: 65, 
-          paddingBottom: 10, 
+          height: 70,             // Altura ideal para respiro
+          paddingBottom: 15,      // Evita sobreposição com os botões do celular
           paddingTop: 8,
           borderTopWidth: 1,
           borderTopColor: '#D9D9D9'
@@ -37,7 +39,8 @@ function MainTabNavigator() {
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
+      <Stack.Screen name="Splash" component={SplashScreenCustom} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="MainApp" component={MainTabNavigator} />
     </Stack.Navigator>

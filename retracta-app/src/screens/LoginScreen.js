@@ -31,15 +31,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Fluxo integrado com Google e transição direta validada para mobile
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      navigation.replace('MainApp');
-    }, 800);
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>RETRACTA</Text>
@@ -70,21 +61,9 @@ export default function LoginScreen({ navigation }) {
         {loading ? (
           <ActivityIndicator size="small" color="#004AAD" style={{ marginVertical: 14 }} />
         ) : (
-          <>
-            <TouchableOpacity style={styles.buttonEmail} onPress={handleEmailAuth}>
-              <Text style={styles.buttonText}>{isRegistering ? 'Cadastrar com E-mail' : 'Entrar com E-mail'}</Text>
-            </TouchableOpacity>
-
-            <View style={styles.dividerContainer}>
-              <View style={styles.line} />
-              <Text style={styles.orText}>OU</Text>
-              <View style={styles.line} />
-            </View>
-
-            <TouchableOpacity style={styles.buttonGoogle} onPress={handleGoogleLogin}>
-              <Text style={styles.googleButtonText}>Entrar com Google</Text>
-            </TouchableOpacity>
-          </>
+          <TouchableOpacity style={styles.buttonEmail} onPress={handleEmailAuth}>
+            <Text style={styles.buttonText}>{isRegistering ? 'Cadastrar com E-mail' : 'Entrar com E-mail'}</Text>
+          </TouchableOpacity>
         )}
 
         <TouchableOpacity 
@@ -151,41 +130,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonGoogle: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#004AAD',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    marginTop: 6,
   },
   buttonText: {
     fontFamily: 'Inter_600SemiBold',
     color: '#FFFFFF',
     fontSize: 14,
-  },
-  googleButtonText: {
-    fontFamily: 'Inter_600SemiBold',
-    color: '#004AAD',
-    fontSize: 14,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#D9D9D9',
-  },
-  orText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: '#545454',
-    marginHorizontal: 10,
   },
   switchButton: {
     marginTop: 16,

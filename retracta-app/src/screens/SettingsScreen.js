@@ -1,91 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, Dimensions, ActivityIndicator } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../config/firebase';
 import { signOut } from 'firebase/auth';
 
 export default function SettingsScreen({ navigation }) {
-  const [region, setRegion] = useState({
-    latitude: -23.6261, // Taboão da Serra como padrão inicial
-    longitude: -46.7544,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  });
-
-  const [markerCoords, setMarkerCoords] = useState({
-    latitude: -23.6261,
-    longitude: -46.7544,
-  });
-
+  const [coordsText, setCoordsText] = useState('Nenhuma localização salva');
   const [loadingGps, setLoadingGps] = useState(false);
 
   useEffect(() => {
-    loadSavedLocation();
+    loadSavedCoords();
   }, []);
 
-  const loadSavedLocation = async () => {
+  const loadSavedCoords = async () => {
     try {
       const savedLat = await AsyncStorage.getItem('@retracta_lat');
       const savedLon = await AsyncStorage.getItem('@retracta_lon');
+      const savedName = await AsyncStorage.getItem('@retracta_city');
+
       if (savedLat && savedLon) {
-        const lat = parseFloat(savedLat);
-        const lon = parseFloat(savedLon);
-        setRegion({ latitude: lat, longitude: lon, latitudeDelta: 0.05, longitudeDelta: 0.05 });
-        setMarkerCoords({ latitude: lat, longitude: lon });
+        setCoordsText(`${savedName || 'Localização Personalizada'}\nLat: ${parseFloat(savedLat).toFixed(4)}, Lon: ${parseFloat(savedLon).toFixed(4)}`);
       }
     } catch (error) {
-      // Usa padrão
+      // Ignora erro
     }
   };
 
-  // Botão para ir direto para a localização atual do celular (GPS)
-  const handleGetCurrentLocation = async () => {
+  const handleGetGPSLocation = async () => {
     setLoadingGps(true);
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setLoadingGps(false);
-        Alert.alert('Permissão negada', 'Permita o acesso à localização para usar esta função.');
+        Alert.alert('Permissão negada', 'Permita o acesso à localização nas configurações do seu celular para usar esta função.');
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = location.coords;
 
-      const newRegion = {
-        latitude,
-        longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
+      // Salva as coordenadas exatas
+      await AsyncStorage.setItem('@retracta_lat', latitude.toString());
+      await AsyncStorage.setItem('@retracta_lon', longitude.toString());
+      await AsyncStorage.setItem('@retracta_city', 'Minha Localização GPS');
 
-      setRegion(newRegion);
-      setMarkerCoords({ latitude, longitude });
+      setCoordsText(`Minha Localização GPS\nLat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
       setLoadingGps(false);
+      Alert.alert('Sucesso', 'Localização do varal atualizada com sucesso via GPS!');
     } catch (error) {
       setLoadingGps(false);
-      Alert.alert('Erro', 'Não foi possível obter a localização atual.');
-    }
-  };
-
-  // Quando o usuário toca em qualquer lugar do mapa
-  const handleMapPress = (e) => {
-    const coords = e.nativeEvent.coordinate;
-    setMarkerCoords(coords);
-  };
-
-  const saveLocation = async () => {
-    try {
-      await AsyncStorage.setItem('@retracta_lat', markerCoords.latitude.toString());
-      await AsyncStorage.setItem('@retracta_lon', markerCoords.longitude.toString());
-      // Salva um nome genérico baseado nas coordenadas para exibir no painel
-      await AsyncStorage.setItem('@retracta_city', `Lat: ${markerCoords.latitude.toFixed(2)}, Lon: ${markerCoords.longitude.toFixed(2)}`);
-      
-      Alert.alert('Sucesso', 'Localização exata do varal salva com sucesso!');
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a localização.');
+      Alert.alert('Erro', 'Não foi possível obter a localização atual. Verifique se o GPS do celular está ligado.');
     }
   };
 
@@ -96,36 +61,27 @@ export default function SettingsScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Configurações e Localização</Text>
+      <Text style={styles.title}>Configurações de Localização</Text>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Mapa do Varal (Geolocalização)</Text>
-        <Text style={styles.label}>Toque no mapa para marcar onde o varal está instalado ou use o botão abaixo:</Text>
+        <Text style={styles.sectionTitle}>GPS do Varal</Text>
+        <Text style={styles.label}>
+          Clique no botão abaixo para capturar automaticamente a latitude e longitude exatas de onde o seu varal está instalado:
+        </Text>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>{coordsText}</Text>
+        </View>
 
         <TouchableOpacity 
           style={styles.gpsButton} 
-          onPress={handleGetCurrentLocation}
+          onPress={handleGetGPSLocation}
           disabled={loadingGps}>
           {loadingGps ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text style={styles.gpsButtonText}>📍 Usar minha localização atual (GPS)</Text>
+            <Text style={styles.gpsButtonText}>📍 Capturar Localização Atual (GPS)</Text>
           )}
-        </TouchableOpacity>
-
-        {/* Componente de Mapa Interativo */}
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={region}
-            onRegionChangeComplete={setRegion}
-            onPress={handleMapPress}>
-            <Marker coordinate={markerCoords} title="Localização do Varal" />
-          </MapView>
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={saveLocation}>
-          <Text style={styles.saveButtonText}>Salvar Localização no Mapa</Text>
         </TouchableOpacity>
       </View>
 
@@ -176,40 +132,30 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
     color: '#545454',
-    marginBottom: 12,
+    marginBottom: 14,
+    lineHeight: 18,
   },
-  gpsButton: {
-    backgroundColor: '#38B6FF',
-    padding: 10,
+  infoBox: {
+    backgroundColor: '#F4F7FE',
+    padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  gpsButtonText: {
-    fontFamily: 'Inter_600SemiBold',
-    color: '#FFFFFF',
-    fontSize: 13,
-  },
-  mapContainer: {
-    width: '100%',
-    height: 250,
-    borderRadius: 8,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#D9D9D9',
     marginBottom: 14,
   },
-  map: {
-    width: '100%',
-    height: '100%',
+  infoText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    color: '#004AAD',
+    textAlign: 'center',
   },
-  saveButton: {
+  gpsButton: {
     backgroundColor: '#004AAD',
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
-  saveButtonText: {
+  gpsButtonText: {
     fontFamily: 'Inter_600SemiBold',
     color: '#FFFFFF',
     fontSize: 14,

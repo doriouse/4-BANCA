@@ -49,14 +49,3 @@ Certifique-se de ter instalado em sua máquina:
 Escaneie o QR Code exibido no terminal (ou na tela do navegador) (mas antes desligue o FireWall).
 
 O aplicativo será carregado instantaneamente para testes.
-
-
-retracta-app/
-├── assets/              # Imagens, ícones e splash screen
-├── src/
-│   ├── components/      # Componentes reutilizáveis
-│   ├── config/          # Configuração do Firebase
-│   └── screens/         # Telas principais (HomeScreen, Login, Configurações)
-├── App.js               # Componente raiz e rotas principais
-├── app.json             # Configurações do Expo e permissões nativas
-└── package.json         # Dependências e scripts do projeto
